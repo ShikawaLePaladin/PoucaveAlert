@@ -30,7 +30,7 @@ Fini les wipes à cause d'un joueur qui bouge ou d'un mauvais dispel! 🎯
 - Détection en temps réel des dispels/decurse
 - Annonce normale pour les dispels autorisés:
   ```
-  Pomme a dispel [Corruption] de Tank
+  Robespoire a dispel [Corruption] de Tank
   ```
 - **ALERTE SPÉCIALE** pour les dispels interdits:
   ```
@@ -105,7 +105,7 @@ L'addon sauvegarde automatiquement vos paramètres dans `PoucaveAlertDB`. Config
 ## 🎨 Exemple d'utilisation
 
 ```
-[Raid] PoucaveAlert: Pomme a dispel [Corruption] de Shikawa
+[Raid] PoucaveAlert: Robespoire a dispel [Corruption] de Shikawa
 ⚠️⚠️⚠️ Healer a DISPEL [Phase Shifted] (Magie) de DPS — Sanv Tasdal: 💀 TRÈS DANGEREUX! ⚠️⚠️⚠️
 [Raid Warning] Tank BOUGE PENDANT SHACKLE! ⚠️
 ```
