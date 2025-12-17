@@ -634,8 +634,14 @@ function PoucaveAlert:OnEvent(event, arg1)
         -- Détecte les messages contenant !blague
         if arg1 and string.find(arg1, "!blague") then
             local joke = GetRandomJoke()
-            local _, _, chatType = string.find(event, "CHAT_MSG_(%w+)")
-            SendChatMessage(joke, chatType)
+            -- Annoncer en RAID prioritairement, sinon PARTY
+            if GetNumRaidMembers() > 0 then
+                SendChatMessage(joke, "RAID")
+            elseif GetNumPartyMembers() > 0 then
+                SendChatMessage(joke, "PARTY")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Blague]|r " .. joke)
+            end
         end
     end
 end
