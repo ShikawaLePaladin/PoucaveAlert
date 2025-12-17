@@ -144,10 +144,10 @@ function PoucaveAlert:OnLoad(frame)
     frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_OTHER")
     
     -- Événements pour détecter les dispels/decurse
-    frame:RegisterEvent("CHAT_MSG_SPELL_SELF_BUFF")
-    frame:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF")
-    frame:RegisterEvent("CHAT_MSG_SPELL_PARTY_BUFF")
-    frame:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF")
+    frame:RegisterEvent("CHAT_MSG_SPELL_BREAK_AURA")
+    frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF")
+    frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_PARTY")
+    frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_OTHER")
     
     -- Événements pour détecter les messages !blague
     frame:RegisterEvent("CHAT_MSG_PARTY")
@@ -203,6 +203,11 @@ end
 
 -- Détection du debuff Shackle
 function PoucaveAlert:CheckShackleDebuff(msg)
+    -- Mode debug: afficher tous les messages
+    if GetConfig("debugMode") then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF8800[DEBUG SHACKLE]|r " .. msg)
+    end
+    
     -- Patterns pour détecter Shackle dans les messages de combat
     local patterns = {
         "(.+) is afflicted by Shackle of the Legion",
@@ -309,6 +314,11 @@ end
 -- Détecter et annoncer les dispels/decurse
 function PoucaveAlert:CheckDispel(msg)
     if not GetConfig("announceDispels") then return end
+    
+    -- Mode debug: afficher tous les messages
+    if GetConfig("debugMode") then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF00FF[DEBUG DISPEL]|r " .. msg)
+    end
     
     local patterns = {
         -- Dispel Magic / Remove Curse patterns (EN)
@@ -621,11 +631,9 @@ function PoucaveAlert:OnEvent(event, arg1)
            event == "CHAT_MSG_SPELL_AURA_GONE_PARTY" or
            event == "CHAT_MSG_SPELL_AURA_GONE_OTHER" then
         self:CheckShackleRemoved(arg1)
+        self:CheckDispel(arg1)  -- Les dispels apparaissent aussi dans AURA_GONE
         
-    elseif event == "CHAT_MSG_SPELL_SELF_BUFF" or
-           event == "CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF" or
-           event == "CHAT_MSG_SPELL_PARTY_BUFF" or
-           event == "CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF" then
+    elseif event == "CHAT_MSG_SPELL_BREAK_AURA" then
         self:CheckDispel(arg1)
         
     elseif event == "CHAT_MSG_PARTY" or event == "CHAT_MSG_RAID" or event == "CHAT_MSG_GUILD" then
