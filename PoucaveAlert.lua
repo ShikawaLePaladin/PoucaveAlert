@@ -333,42 +333,36 @@ function PoucaveAlert:CheckDispel(msg)
         "(.+) de (.+) est retiré%.",
     }
     
-    for _, pattern in ipairs(patterns) do
-        -- Pattern 1: "X's Y is removed."
-        local _, _, spell = string.find(msg, "^(.+) is removed%.$")
-        if spell then
-            self:AnnounceDispel("Unknown", spell)
-            return true
+    -- Pattern 1: "Player's Spell is removed." (DISPEL ACTIF)
+    local _, _, target, spell = string.find(msg, "^(.+)'s (.+) is removed%.$")
+    if target and spell then
+        self:AnnounceDispel("Dispeller", spell, target)
+        return true
+    end
+    
+    -- Pattern 2: "Spell fades from Player." (expire naturellement - PAS un dispel)
+    local _, _, spell2, target2 = string.find(msg, "^(.+) fades from (.+)%.$")
+    if spell2 and target2 then
+        -- Ne rien faire, c'est juste l'expiration naturelle
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF888888[Fade naturel]|r " .. spell2 .. " sur " .. target2)
         end
-        
-        -- Pattern 2: "Your Dispel Magic removes X from Y."
-        local _, _, dispelSpell, removedSpell, target = string.find(msg, "^Your (.+) removes (.+) from (.+)%.$")
-        if dispelSpell and removedSpell and target then
-            local caster = UnitName("player")
-            self:AnnounceDispel(caster, removedSpell, target)
-            return true
-        end
-        
-        -- Pattern 3: "X's Dispel Magic removes Y from Z."
-        local _, _, caster, dispelSpell2, removedSpell2, target2 = string.find(msg, "^(.+)'s (.+) removes (.+) from (.+)%.$")
-        if caster and dispelSpell2 and removedSpell2 and target2 then
-            self:AnnounceDispel(caster, removedSpell2, target2)
-            return true
-        end
-        
-        -- Pattern 4: "X is removed from Y."
-        local _, _, spell2, target3 = string.find(msg, "^(.+) is removed from (.+)%.$")
-        if spell2 and target3 then
-            self:AnnounceDispel("Unknown", spell2, target3)
-            return true
-        end
-        
-        -- Pattern 5: "X's Y is removed."
-        local _, _, target4, spell3 = string.find(msg, "^(.+)'s (.+) is removed%.$")
-        if target4 and spell3 then
-            self:AnnounceDispel("Unknown", spell3, target4)
-            return true
-        end
+        return false
+    end
+    
+    -- Pattern 3: "Your Dispel Magic removes X from Y."
+    local _, _, dispelSpell, removedSpell, target3 = string.find(msg, "^Your (.+) removes (.+) from (.+)%.$")
+    if dispelSpell and removedSpell and target3 then
+        local caster = UnitName("player")
+        self:AnnounceDispel(caster, removedSpell, target3)
+        return true
+    end
+    
+    -- Pattern 4: "Caster's Dispel Magic removes X from Y."
+    local _, _, caster, dispelSpell2, removedSpell2, target4 = string.find(msg, "^(.+)'s (.+) removes (.+) from (.+)%.$")
+    if caster and dispelSpell2 and removedSpell2 and target4 then
+        self:AnnounceDispel(caster, removedSpell2, target4)
+        return true
     end
     
     return false
