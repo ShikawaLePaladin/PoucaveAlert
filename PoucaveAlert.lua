@@ -214,7 +214,7 @@ function PoucaveAlert:CheckShackleDebuff(msg)
     }
     
     for _, pattern in ipairs(patterns) do
-        local playerName = string.match(msg, pattern)
+        local _, _, playerName = string.find(msg, pattern)
         if playerName then
             if playerName == "You" or playerName == "Vous" then
                 playerName = UnitName("player")
@@ -244,7 +244,7 @@ function PoucaveAlert:CheckShackleRemoved(msg)
     }
     
     for _, pattern in ipairs(patterns) do
-        local playerName = string.match(msg, pattern)
+        local _, _, playerName = string.find(msg, pattern)
         if playerName then
             if playerName == "you" or playerName == "vous" then
                 playerName = UnitName("player")
@@ -325,14 +325,14 @@ function PoucaveAlert:CheckDispel(msg)
     
     for _, pattern in ipairs(patterns) do
         -- Pattern 1: "X's Y is removed."
-        local spell = string.match(msg, "^(.+) is removed%.$")
+        local _, _, spell = string.find(msg, "^(.+) is removed%.$")
         if spell then
             self:AnnounceDispel("Unknown", spell)
             return true
         end
         
         -- Pattern 2: "Your Dispel Magic removes X from Y."
-        local dispelSpell, removedSpell, target = string.match(msg, "^Your (.+) removes (.+) from (.+)%.$")
+        local _, _, dispelSpell, removedSpell, target = string.find(msg, "^Your (.+) removes (.+) from (.+)%.$")
         if dispelSpell and removedSpell and target then
             local caster = UnitName("player")
             self:AnnounceDispel(caster, removedSpell, target)
@@ -340,21 +340,21 @@ function PoucaveAlert:CheckDispel(msg)
         end
         
         -- Pattern 3: "X's Dispel Magic removes Y from Z."
-        local caster, dispelSpell2, removedSpell2, target2 = string.match(msg, "^(.+)'s (.+) removes (.+) from (.+)%.$")
+        local _, _, caster, dispelSpell2, removedSpell2, target2 = string.find(msg, "^(.+)'s (.+) removes (.+) from (.+)%.$")
         if caster and dispelSpell2 and removedSpell2 and target2 then
             self:AnnounceDispel(caster, removedSpell2, target2)
             return true
         end
         
         -- Pattern 4: "X is removed from Y."
-        local spell2, target3 = string.match(msg, "^(.+) is removed from (.+)%.$")
+        local _, _, spell2, target3 = string.find(msg, "^(.+) is removed from (.+)%.$")
         if spell2 and target3 then
             self:AnnounceDispel("Unknown", spell2, target3)
             return true
         end
         
         -- Pattern 5: "X's Y is removed."
-        local target4, spell3 = string.match(msg, "^(.+)'s (.+) is removed%.$")
+        local _, _, target4, spell3 = string.find(msg, "^(.+)'s (.+) is removed%.$")
         if target4 and spell3 then
             self:AnnounceDispel("Unknown", spell3, target4)
             return true
@@ -632,7 +632,8 @@ function PoucaveAlert:OnEvent(event, arg1)
         -- Détecte les messages contenant !blague
         if arg1 and string.find(arg1, "!blague") then
             local joke = GetRandomJoke()
-            SendChatMessage(joke, string.match(event, "CHAT_MSG_(%w+)"))
+            local _, _, chatType = string.find(event, "CHAT_MSG_(%w+)")
+            SendChatMessage(joke, chatType)
         end
     end
 end
