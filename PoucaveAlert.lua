@@ -181,7 +181,7 @@ end
 
 -- Helper: Récupérer une blague aléatoire
 local function GetRandomJoke()
-    local jokeCount = #PoucaveAlert.jokes
+    local jokeCount = table.getn(PoucaveAlert.jokes)
     local randomIndex = math.random(1, jokeCount)
     return PoucaveAlert.jokes[randomIndex]
 end
