@@ -447,11 +447,7 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
         end
     else
         DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
-        end
     end
-    
-    if GetConfig("debugMode") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
     end
 end
 
