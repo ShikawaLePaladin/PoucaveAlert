@@ -12,12 +12,27 @@ PoucaveAlert.testMode = false -- Mode test pour simuler le debuff Shackle
 -- Noms possibles du sort Shackle (à adapter selon le serveur)
 PoucaveAlert.shackleNames = {
     "Shackle of the Legion",
+    "shackle of the legion",
     "Shackle",
+    "shackle",
     "Shackles", 
+    "shackles",
     "Chaînes de la Légion",
+    "chaînes de la légion",
     "Chaînes",
+    "chaînes",
     "Chains",
+    "chains",
 }
+-- Stats de session
+PoucaveAlert.stats = {
+    shackleCount = 0,
+    movementAlerts = 0,
+    dispelAlerts = 0,
+    forbiddenDispels = 0,
+}
+-- Anti-spam: timestamp de la dernière alerte par joueur
+PoucaveAlert.lastAlertTime = {}
 
 -- Liste des sorts à NE PAS DISPEL (très dangereux!)
 PoucaveAlert.forbiddenDispels = {
@@ -114,7 +129,28 @@ function PoucaveAlert:OnLoad()
     this:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF")
     
     self.initialized = true
-    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r v1.0 chargé. /pa pour les commandes.")
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r v1.1 chargé. /pa pour les commandes.")
+end
+
+-- Helper: Vérifier si un unitId existe et est valide
+local function IsValidUnitId(unitId)
+    return UnitExists(unitId) and UnitName(unitId) ~= nil
+end
+
+-- Helper: Comparer les noms de sort sans casse
+local function SpellMatches(spellName, searchName)
+    if not spellName or not searchName then return false end
+    return string.lower(spellName):find(string.lower(searchName), 1, true) ~= nil
+end
+
+-- Helper: Anti-spam (max 1 alerte par joueur par 2 secondes)
+local function CanAlert(playerName)
+    local now = GetTime()
+    if PoucaveAlert.lastAlertTime[playerName] and (now - PoucaveAlert.lastAlertTime[playerName]) < 2 then
+        return false
+    end
+    PoucaveAlert.lastAlertTime[playerName] = now
+    return true
 end
 
 -- Initialisation des variables sauvegardées (appelée au login)
@@ -297,12 +333,14 @@ end
 
 -- Annoncer un dispel dans le raid
 function PoucaveAlert:AnnounceDispel(caster, spell, target)
-    -- Vérifier si c'est un sort interdit
+    if not spell or spell == "" then return end
+    
+    -- Vérifier si c'est un sort interdit (case-insensitive)
     local isForbidden = false
     local dangerInfo = nil
     
     for forbiddenSpell, info in pairs(self.forbiddenDispels) do
-        if string.find(spell, forbiddenSpell) then
+        if SpellMatches(spell, forbiddenSpell) then
             isForbidden = true
             dangerInfo = info
             break
@@ -311,6 +349,7 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
     
     local message
     if isForbidden and dangerInfo then
+        self.stats.forbiddenDispels = self.stats.forbiddenDispels + 1
         -- Annonce spéciale pour les dispels interdits
         if target then
             message = string.format("⚠️⚠️⚠️ %s a DISPEL [%s] (%s) de %s — %s: %s ⚠️⚠️⚠️", 
@@ -328,6 +367,7 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
         RaidNotice_AddMessage(RaidWarningFrame, message, ChatTypeInfo["RAID_WARNING"])
         
     else
+        self.stats.dispelAlerts = self.stats.dispelAlerts + 1
         -- Annonce normale pour les autres dispels
         if target then
             message = string.format("%s a dispel [%s] de %s", caster, spell, target)
@@ -412,15 +452,15 @@ end
 
 -- Vérifier si une unité a le debuff Shackle
 function PoucaveAlert:UnitHasShackle(unitId)
-    if not UnitExists(unitId) then return false end
+    if not IsValidUnitId(unitId) then return false end
     
     for i = 1, 16 do -- Maximum 16 debuffs en vanilla
         local debuffName = UnitDebuff(unitId, i)
         if not debuffName then break end
         
-        -- Vérifier si c'est un des noms de Shackle
+        -- Vérifier si c'est un des noms de Shackle (insensible à la casse)
         for _, shackleName in ipairs(self.shackleNames) do
-            if string.find(debuffName, shackleName) then
+            if SpellMatches(debuffName, shackleName) then
                 return true
             end
         end
@@ -511,10 +551,13 @@ end
 
 -- Annoncer dans le chat
 function PoucaveAlert:AnnounceMovement(playerName)
+    if not CanAlert(playerName) then return end -- Anti-spam
+    
+    self.stats.movementAlerts = self.stats.movementAlerts + 1
     local message = playerName .. " BOUGE PENDANT SHACKLE! ⚠️"
     local channel = GetConfig("announceChannel")
     
-    if channel == "RAID_WARNING" and IsRaidLeader() or IsRaidOfficer() then
+    if channel == "RAID_WARNING" and (IsRaidLeader() or IsRaidOfficer()) then
         SendChatMessage(message, "RAID_WARNING")
     elseif channel == "RAID" and GetNumRaidMembers() > 0 then
         SendChatMessage(message, "RAID")
@@ -694,6 +737,13 @@ SlashCmdList["POUCAVEALERT"] = function(msg)
         end
         DEFAULT_CHAT_FRAME:AddMessage("  Joueurs surveillés: " .. count)
         
+    elseif cmd == "stats" then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert:|r Statistiques:")
+        DEFAULT_CHAT_FRAME:AddMessage("  Shackles détectés: " .. PoucaveAlert.stats.shackleCount)
+        DEFAULT_CHAT_FRAME:AddMessage("  Alertes mouvement: " .. PoucaveAlert.stats.movementAlerts)
+        DEFAULT_CHAT_FRAME:AddMessage("  Dispels normaux: " .. PoucaveAlert.stats.dispelAlerts)
+        DEFAULT_CHAT_FRAME:AddMessage("  Dispels interdits: " .. PoucaveAlert.stats.forbiddenDispels)
+        
     else
         DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r - Commandes:")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa on|off - Activer/désactiver")
@@ -706,6 +756,7 @@ SlashCmdList["POUCAVEALERT"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  /pa testmove - SIMULER Shackle et tester les mouvements")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa reset - Réinitialiser la surveillance")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa status - Voir le statut")
+        DEFAULT_CHAT_FRAME:AddMessage("  /pa stats - Voir les statistiques")
     end
 end
 
