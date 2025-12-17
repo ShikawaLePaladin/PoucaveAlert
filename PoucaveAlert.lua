@@ -86,6 +86,25 @@ PoucaveAlert.forbiddenDispels = {
     ["Soul Torment"] = { boss = "Mephistroth", type = "Magie", danger = "Mécanique" },
 }
 
+-- Table de blagues WoW
+PoucaveAlert.jokes = {
+    "Pourquoi les Mages ne peuvent pas faire de blagues? Parce qu'elles sont trop explosives!",
+    "Qu'est-ce qu'un Chevalier de la Mort dit au bar? Je vais prendre un... verre de sang!",
+    "Comment appelle-t-on un Druide qui perd ses formes? Un sans-forme!",
+    "Pourquoi les Shamans sont jamais tristes? Parce qu'ils contrôlent l'élémentaire!",
+    "Qu'est-ce qu'un Paladin et un prêtre ont en commun? Ils prient tous les deux... mais le Paladin prie en frappant!",
+    "Pourquoi les Voleurs vont toujours en prison? Parce qu'ils sont trop... transparents!",
+    "Comment un Chasseur compte ses victimes? 1... 2... PEW PEW PEW!",
+    "Qu'est-ce qu'un Guerrier dit après un wipe? Je pense que je n'ai pas CHARGÉ assez!",
+    "Pourquoi les Démonistes ne gagnent jamais au poker? Ils vendent toujours leur âme!",
+    "Qu'est-ce qu'un Moine et un café ont en commun? Ils sont TOUS LES DEUX énergisants!",
+    "Comment tu sais qu'un Druide a mangé trop? Quand il se transforme en Baleine!",
+    "Pourquoi les Arcanistes rêvent-ils en nombre? Parce qu'ils calculent tout!",
+    "Qu'est-ce qu'un Rôdeur qui a oublié son arc dit? Je suis totalement... désarmé!",
+    "Pourquoi les Guerriers ne lisent jamais? Parce que les mots ont trop de DÉGÂTS!",
+    "Qu'est-ce qu'un Sorcier dit en prison? Enfin un sort de CONTRÔLE qui fonctionne!",
+}
+
 -- Configuration par défaut
 local defaults = {
     enabled = true,
@@ -130,6 +149,11 @@ function PoucaveAlert:OnLoad(frame)
     frame:RegisterEvent("CHAT_MSG_SPELL_PARTY_BUFF")
     frame:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF")
     
+    -- Événements pour détecter les messages !blague
+    frame:RegisterEvent("CHAT_MSG_PARTY")
+    frame:RegisterEvent("CHAT_MSG_RAID")
+    frame:RegisterEvent("CHAT_MSG_GUILD")
+    
     self.initialized = true
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r v1.1 chargé. /pa pour les commandes.")
 end
@@ -153,6 +177,13 @@ local function CanAlert(playerName)
     end
     PoucaveAlert.lastAlertTime[playerName] = now
     return true
+end
+
+-- Helper: Récupérer une blague aléatoire
+local function GetRandomJoke()
+    local jokeCount = #PoucaveAlert.jokes
+    local randomIndex = math.random(1, jokeCount)
+    return PoucaveAlert.jokes[randomIndex]
 end
 
 -- Initialisation des variables sauvegardées (appelée au login)
@@ -596,6 +627,13 @@ function PoucaveAlert:OnEvent(event, arg1)
            event == "CHAT_MSG_SPELL_PARTY_BUFF" or
            event == "CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF" then
         self:CheckDispel(arg1)
+        
+    elseif event == "CHAT_MSG_PARTY" or event == "CHAT_MSG_RAID" or event == "CHAT_MSG_GUILD" then
+        -- Détecte les messages contenant !blague
+        if arg1 and string.find(arg1, "!blague") then
+            local joke = GetRandomJoke()
+            SendChatMessage(joke, string.match(event, "CHAT_MSG_(%w+)"))
+        end
     end
 end
 
@@ -747,6 +785,10 @@ SlashCmdList["POUCAVEALERT"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  Dispels interdits: " .. PoucaveAlert.stats.forbiddenDispels)
         DEFAULT_CHAT_FRAME:AddMessage("  /pa reset stats pour réinitialiser")
         
+    elseif cmd == "blague" or cmd == "joke" then
+        local joke = GetRandomJoke()
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Blague WoW]|r " .. joke)
+        
     else
         DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r - Commandes:")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa on|off - Activer/désactiver")
@@ -760,6 +802,7 @@ SlashCmdList["POUCAVEALERT"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  /pa reset - Réinitialiser la surveillance")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa status - Voir le statut")
         DEFAULT_CHAT_FRAME:AddMessage("  /pa stats - Voir les statistiques")
+        DEFAULT_CHAT_FRAME:AddMessage("  /pa blague - Raconter une blague WoW")
     end
 end
 
