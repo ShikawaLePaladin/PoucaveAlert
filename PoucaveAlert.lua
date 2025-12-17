@@ -149,6 +149,9 @@ function PoucaveAlert:OnLoad(frame)
     frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_SELF")
     frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_PARTY")
     frame:RegisterEvent("CHAT_MSG_SPELL_AURA_GONE_OTHER")
+    frame:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF")
+    frame:RegisterEvent("CHAT_MSG_SPELL_PARTY_BUFF")
+    frame:RegisterEvent("CHAT_MSG_SPELL_SELF_BUFF")
     
     -- Événements pour détecter les messages !blague
     frame:RegisterEvent("CHAT_MSG_PARTY")
@@ -334,14 +337,7 @@ function PoucaveAlert:CheckDispel(msg)
         "(.+) de (.+) est retiré%.",
     }
     
-    -- Pattern 1: "Player's Spell is removed." (DISPEL ACTIF)
-    local _, _, target, spell = string.find(msg, "^(.+)'s (.+) is removed%.$")
-    if target and spell then
-        self:AnnounceDispel("Dispeller", spell, target)
-        return true
-    end
-    
-    -- Pattern 2: "Spell fades from Player." (expire naturellement - PAS un dispel)
+    -- Pattern 1: "Spell fades from Player." (expire naturellement - PAS un dispel)
     local _, _, spell2, target2 = string.find(msg, "^(.+) fades from (.+)%.$")
     if spell2 and target2 then
         -- Ne rien faire, c'est juste l'expiration naturelle
@@ -351,7 +347,7 @@ function PoucaveAlert:CheckDispel(msg)
         return false
     end
     
-    -- Pattern 3: "Your Dispel Magic removes X from Y."
+    -- Pattern 2: "Your Dispel Magic removes X from Y." (TU dispel)
     local _, _, dispelSpell, removedSpell, target3 = string.find(msg, "^Your (.+) removes (.+) from (.+)%.$")
     if dispelSpell and removedSpell and target3 then
         local caster = UnitName("player")
@@ -359,11 +355,21 @@ function PoucaveAlert:CheckDispel(msg)
         return true
     end
     
-    -- Pattern 4: "Caster's Dispel Magic removes X from Y."
+    -- Pattern 3: "Caster's Dispel Magic removes X from Y." (Quelqu'un d'autre dispel)
     local _, _, caster, dispelSpell2, removedSpell2, target4 = string.find(msg, "^(.+)'s (.+) removes (.+) from (.+)%.$")
     if caster and dispelSpell2 and removedSpell2 and target4 then
         self:AnnounceDispel(caster, removedSpell2, target4)
         return true
+    end
+    
+    -- Pattern 4: "Player's Spell is removed." (Dispel sans info du caster - ignorer)
+    local _, _, target, spell = string.find(msg, "^(.+)'s (.+) is removed%.$")
+    if target and spell then
+        -- Ce pattern n'indique pas QUI a dispel, on l'ignore
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFF8800[Dispel inconnu]|r " .. spell .. " retiré de " .. target)
+        end
+        return false
     end
     
     return false
@@ -632,7 +638,10 @@ function PoucaveAlert:OnEvent(event, arg1)
         self:CheckShackleRemoved(arg1)
         self:CheckDispel(arg1)  -- Les dispels apparaissent aussi dans AURA_GONE
         
-    elseif event == "CHAT_MSG_SPELL_BREAK_AURA" then
+    elseif event == "CHAT_MSG_SPELL_BREAK_AURA" or
+           event == "CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF" or
+           event == "CHAT_MSG_SPELL_PARTY_BUFF" or
+           event == "CHAT_MSG_SPELL_SELF_BUFF" then
         self:CheckDispel(arg1)
         
     elseif event == "CHAT_MSG_PARTY" or event == "CHAT_MSG_RAID" or event == "CHAT_MSG_GUILD" then
