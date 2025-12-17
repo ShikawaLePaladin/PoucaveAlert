@@ -71,6 +71,11 @@ Fini les wipes à cause d'un joueur qui bouge ou d'un mauvais dispel! 🎯
 | `/pa reset` | Réinitialiser la liste de surveillance |
 | `/pa status` | Voir le statut et la configuration actuelle |
 | `/pa stats` | Voir les statistiques de session |
+| `/pa blague` | Raconter une blague WoW aléatoire |
+
+### 🎭 Fonctionnalité Blagues
+
+Envoyez `!blague` dans le chat raid/groupe/guilde et l'addon répondra automatiquement avec une blague WoW aléatoire parmi 15 blagues disponibles! Parfait pour détendre l'ambiance entre les pulls. 😄
 
 ---
 
