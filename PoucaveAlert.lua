@@ -392,26 +392,32 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
     end
     
     local message
+    local isWarning = false
+    
     if isForbidden and dangerInfo then
         self.stats.forbiddenDispels = self.stats.forbiddenDispels + 1
+        isWarning = true
+        
         -- Annonce spéciale pour les dispels interdits
         if target then
-            message = string.format("⚠️⚠️⚠️ %s a DISPEL [%s] (%s) de %s — %s: %s ⚠️⚠️⚠️", 
-                caster, spell, dangerInfo.type, target, dangerInfo.boss, dangerInfo.danger)
+            message = string.format("⚠️ %s a DISPEL [%s] de %s — %s: %s ⚠️", 
+                caster, spell, target, dangerInfo.boss, dangerInfo.danger)
         else
-            message = string.format("⚠️⚠️⚠️ %s a DISPEL [%s] (%s) — %s: %s ⚠️⚠️⚠️", 
-                caster, spell, dangerInfo.type, dangerInfo.boss, dangerInfo.danger)
+            message = string.format("⚠️ %s a DISPEL [%s] — %s: %s ⚠️", 
+                caster, spell, dangerInfo.boss, dangerInfo.danger)
         end
         
         -- Son d'alerte pour les mauvais dispels
-        PlaySound("RaidWarning")
+        if GetConfig("soundAlert") then
+            PlaySound("RaidWarning")
+        end
         
-        -- Afficher en rouge dans le chat local aussi
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000" .. message .. "|r")
-        RaidNotice_AddMessage(RaidWarningFrame, message, ChatTypeInfo["RAID_WARNING"])
+        -- Afficher en rouge dans le chat local
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[DISPEL INTERDIT!]|r " .. message)
         
     else
         self.stats.dispelAlerts = self.stats.dispelAlerts + 1
+        
         -- Annonce normale pour les autres dispels
         if target then
             message = string.format("%s a dispel [%s] de %s", caster, spell, target)
@@ -421,13 +427,26 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
     end
     
     -- Annoncer seulement en combat
-    if UnitAffectingCombat("player") then
-        if GetNumRaidMembers() > 0 then
-            SendChatMessage(message, "RAID")
-        elseif GetNumPartyMembers() > 0 then
-            SendChatMessage(message, "PARTY")
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
+    if not UnitAffectingCombat("player") then 
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF888888[Hors combat - pas d'annonce]|r " .. message)
+        end
+        return 
+    end
+    
+    -- Envoyer en RAID ou PARTY
+    if GetNumRaidMembers() > 0 then
+        SendChatMessage(message, "RAID")
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Annoncé en RAID]|r " .. message)
+        end
+    elseif GetNumPartyMembers() > 0 then
+        SendChatMessage(message, "PARTY")
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Annoncé en PARTY]|r " .. message)
+        end
+    else
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
         end
     end
     
@@ -599,26 +618,37 @@ end
 -- Annoncer dans le chat
 function PoucaveAlert:AnnounceMovement(playerName)
     if not CanAlert(playerName) then return end -- Anti-spam
-    if not UnitAffectingCombat("player") then return end -- Seulement en combat
+    
+    -- Vérifier combat
+    if not UnitAffectingCombat("player") then 
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF888888[Hors combat - " .. playerName .. " a bougé mais pas d'annonce]|r")
+        end
+        return 
+    end
     
     self.stats.movementAlerts = self.stats.movementAlerts + 1
     local message = playerName .. " BOUGE PENDANT SHACKLE! ⚠️"
-    local channel = GetConfig("announceChannel")
     
-    if channel == "RAID_WARNING" and (IsRaidLeader() or IsRaidOfficer()) then
-        SendChatMessage(message, "RAID_WARNING")
-    elseif channel == "RAID" and GetNumRaidMembers() > 0 then
-        SendChatMessage(message, "RAID")
-    elseif channel == "PARTY" and GetNumPartyMembers() > 0 then
-        SendChatMessage(message, "PARTY")
-    else
-        -- Fallback sur le chat par défaut
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000PoucaveAlert:|r " .. message)
-        RaidNotice_AddMessage(RaidWarningFrame, message, ChatTypeInfo["RAID_WARNING"])
+    -- Son d'alerte
+    if GetConfig("soundAlert") then
+        PlaySound("RaidWarning")
     end
     
-    if GetConfig("debugMode") then
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[ALERT]|r " .. message)
+    -- Afficher localement en rouge
+    DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000[MOUVEMENT!]|r " .. message)
+    
+    -- Annoncer en RAID/PARTY
+    if GetNumRaidMembers() > 0 then
+        SendChatMessage(message, "RAID")
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Annoncé en RAID]|r " .. message)
+        end
+    elseif GetNumPartyMembers() > 0 then
+        SendChatMessage(message, "PARTY")
+        if GetConfig("debugMode") then
+            DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00[Annoncé en PARTY]|r " .. message)
+        end
     end
 end
 
