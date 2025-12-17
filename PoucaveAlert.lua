@@ -639,13 +639,13 @@ end
 
 -- Frame pour les mises à jour régulières
 local updateFrame = CreateFrame("Frame", "PoucaveAlertFrame")
-updateFrame:SetScript("OnLoad", function()
-    PoucaveAlert:OnLoad(updateFrame)
-end)
 
 updateFrame:SetScript("OnEvent", function()
     PoucaveAlert:OnEvent(event, arg1)
 end)
+
+-- Initialiser l'addon
+PoucaveAlert:OnLoad(updateFrame)
 
 local timeSinceLastCheck = 0
 local timeSinceLastScan = 0
@@ -805,7 +805,4 @@ SlashCmdList["POUCAVEALERT"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("  /pa blague - Raconter une blague WoW")
     end
 end
-
--- Initialisation au chargement
-PoucaveAlert:OnLoad()
 
