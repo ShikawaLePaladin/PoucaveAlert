@@ -166,7 +166,7 @@ end
 -- Helper: Comparer les noms de sort sans casse
 local function SpellMatches(spellName, searchName)
     if not spellName or not searchName then return false end
-    return string.lower(spellName):find(string.lower(searchName), 1, true) ~= nil
+    return string.find(string.lower(spellName), string.lower(searchName), 1, true) ~= nil
 end
 
 -- Helper: Anti-spam (max 1 alerte par joueur par 2 secondes)
