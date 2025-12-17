@@ -2,7 +2,7 @@
 ## Title: PoucaveAlert
 ## Notes: Détecte les mouvements pendant Shackle et annonce les mauvais dispels
 ## Author: Poucave
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: PoucaveAlertDB
 
 PoucaveAlert.lua

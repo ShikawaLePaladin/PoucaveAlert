@@ -84,10 +84,11 @@ Envoyez `!blague` dans le chat raid/groupe/guilde et l'addon répondra automatiq
 L'addon sauvegarde automatiquement vos paramètres dans `PoucaveAlertDB`. Configuration par défaut:
 
 - ✅ **Activé** par défaut
-- 📢 **Canal d'annonce**: RAID_WARNING (nécessite RL/Officier)
+- 📢 **Canal d'annonce**: RAID (annonce en /raid)
 - 🔊 **Alertes sonores**: Activées
 - 🔍 **Scan automatique**: Activé (scan toutes les 0.5s)
 - 📣 **Annonce dispels**: Activée
+- ⚔️ **Seulement en combat**: Activé (annonces uniquement en combat)
 - 🐛 **Mode debug**: Désactivé
 
 ---
@@ -194,14 +195,17 @@ Commande: `/pa stats`
 
 ---
 
-## 🛡️ Améliorations v1.1
+## 🛡️ Améliorations v1.2
 
 ✅ **Anti-spam**: Max 1 alerte par joueur par 2 secondes  
 ✅ **Recherche insensible à la casse**: Détecte "Shackle", "shackle", "Chaînes", etc.  
 ✅ **Variantes multilingues**: Support EN/FR automatique  
 ✅ **Statistiques**: Suivi des détections en temps réel  
 ✅ **Sécurité renforcée**: Vérification des unitIds valides  
-✅ **Version 1.1.0**
+✅ **Annonces en combat**: Ne spam pas hors combat  
+✅ **Blagues en raid**: Système de blagues WoW avec !blague  
+✅ **Compatibilité Lua 5.0**: Optimisé pour WoW 1.12  
+✅ **Version 1.2.0**
 
 ---
 
@@ -214,7 +218,7 @@ Libre d'utilisation et de modification. Pas de garantie - utilisez à vos risque
 ## 🎖️ Crédits
 
 **Développé par**: Poucave  
-**Version**: 1.1.0  
+**Version**: 1.2.0  
 **Serveur**: Turtle WoW  
 **Date**: Décembre 2025
 

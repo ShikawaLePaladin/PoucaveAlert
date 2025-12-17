@@ -108,11 +108,12 @@ PoucaveAlert.jokes = {
 -- Configuration par défaut
 local defaults = {
     enabled = true,
-    announceChannel = "RAID_WARNING", -- RAID_WARNING, RAID, PARTY, SAY
+    announceChannel = "RAID", -- RAID, RAID_WARNING, PARTY, SAY
     soundAlert = true,
     debugMode = false,
     autoScan = true, -- Scanner automatiquement les debuffs du raid
     announceDispels = true, -- Annoncer les dispels dans le raid
+    combatOnly = true, -- Annoncer seulement en combat
 }
 
 -- Fonction pour obtenir une valeur de config avec fallback
@@ -155,7 +156,7 @@ function PoucaveAlert:OnLoad(frame)
     frame:RegisterEvent("CHAT_MSG_GUILD")
     
     self.initialized = true
-    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r v1.1 chargé. /pa pour les commandes.")
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00PoucaveAlert|r v1.2 chargé. /pa pour les commandes.")
 end
 
 -- Helper: Vérifier si un unitId existe et est valide
@@ -208,14 +209,15 @@ function PoucaveAlert:CheckShackleDebuff(msg)
         DEFAULT_CHAT_FRAME:AddMessage("|cFFFF8800[DEBUG SHACKLE]|r " .. msg)
     end
     
-    -- Patterns pour détecter Shackle dans les messages de combat
+    -- Patterns pour détecter Shackle dans les messages de combat (EN/FR)
     local patterns = {
-        "(.+) is afflicted by Shackle of the Legion",
-        "(.+) subit les effets de Chaînes de la Légion",
-        "(.+) is afflicted by Shackle",
-        "(.+) subit les effets de Chaînes",
+        "(.+) is afflicted by Shackle of the Legion%.",
+        "(.+) subit les effets de Cha\195\174nes de la L\195\169gion%.",
+        "(.+) is afflicted by Shackle%.",
+        "(.+) subit les effets de Cha\195\174nes%.",
+        "(.+) suffers from the effects of Shackle",
         "You are afflicted by Shackle",
-        "Vous subissez les effets de Chaînes",
+        "Vous subissez les effets de Cha\195\174nes",
     }
     
     for _, pattern in ipairs(patterns) do
@@ -240,12 +242,11 @@ end
 -- Détection de la fin du debuff
 function PoucaveAlert:CheckShackleRemoved(msg)
     local patterns = {
-        "Shackle of the Legion fades from (.+)",
-        "Chaînes de la Légion on (.+) s'estompe",
-        "Shackle fades from (.+)",
-        "Chaînes on (.+) fades",
-        "Shackle fades from you",
-        "Chaînes s'estompe",
+        "Shackle of the Legion fades from (.+)%.",
+        "Cha\195\174nes de la L\195\169gion .+ de (.+)%.",
+        "Shackle fades from (.+)%.",
+        "Cha\195\174nes .+ de (.+)%.",
+        "(.+)'s Shackle",
     }
     
     for _, pattern in ipairs(patterns) do
@@ -413,12 +414,15 @@ function PoucaveAlert:AnnounceDispel(caster, spell, target)
         end
     end
     
-    if GetNumRaidMembers() > 0 then
-        SendChatMessage(message, "RAID")
-    elseif GetNumPartyMembers() > 0 then
-        SendChatMessage(message, "PARTY")
-    else
-        DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
+    -- Annoncer seulement en combat
+    if UnitAffectingCombat("player") then
+        if GetNumRaidMembers() > 0 then
+            SendChatMessage(message, "RAID")
+        elseif GetNumPartyMembers() > 0 then
+            SendChatMessage(message, "PARTY")
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cFFFFFF00[Dispel]|r " .. message)
+        end
     end
     
     if GetConfig("debugMode") then
@@ -589,6 +593,7 @@ end
 -- Annoncer dans le chat
 function PoucaveAlert:AnnounceMovement(playerName)
     if not CanAlert(playerName) then return end -- Anti-spam
+    if not UnitAffectingCombat("player") then return end -- Seulement en combat
     
     self.stats.movementAlerts = self.stats.movementAlerts + 1
     local message = playerName .. " BOUGE PENDANT SHACKLE! ⚠️"
